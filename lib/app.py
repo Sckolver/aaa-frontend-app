@@ -13,6 +13,8 @@ from lib.images import open_image
 from lib.models import Reader
 from lib.models import get_model
 
+import numpy as np
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"))
 templates = Jinja2Templates(directory="templates")
@@ -20,15 +22,7 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 def get_index(request: Request) -> Response:
-    return Response(
-        content=f"""
-            <h1>Работает!</h1>
-            <p>теперь загляни в <pre>{__name__.replace(".", "/")}.py</pre></p>
-            <!-- а этот код можно удалить -->
-        """,
-        media_type="text/html",
-    )
-    # return templates.TemplateResponse(request, "index.html")
+    return templates.TemplateResponse(request, "index.html")
 
 
 @app.post("/", response_class=HTMLResponse)
@@ -39,10 +33,12 @@ def infer_model(
 ) -> Response:
     ctx: dict = {}
     try:
-        image = open_image(file.file)
-        draw = PolygonDrawer.from_image(image)
+        image_pil = open_image(file.file)
+        draw = PolygonDrawer.from_image(image_pil)
+        image_np = np.array(image_pil)
+
         words = []
-        for coords, word, accuracy in model.readtext(image):
+        for coords, word, accuracy in model.readtext(image_np):
             draw.highlight_word(coords, word)
             cropped_word_image = draw.crop(coords)
             words.append(
@@ -52,6 +48,7 @@ def infer_model(
                     "accuracy": accuracy,
                 }
             )
+
         highlighted_image = draw.get_highlighted_image()
         ctx.update(
             image=image_to_img_src(highlighted_image),

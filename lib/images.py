@@ -8,8 +8,10 @@ from PIL.Image import Image
 from PIL.Image import open as _open_image
 from PIL.ImageDraw import Draw
 from PIL.ImageDraw import ImageDraw
+from PIL.ImageFont import truetype
 
 
+_FONT = truetype("DejaVuSans.ttf", size=12)
 Coords = list[list[int]]  # EasyOCR format
 Box = tuple[int, int, int, int]  # PIL format
 
@@ -48,6 +50,7 @@ class PolygonDrawer:
             xy=(x, y - self.text_height_px),
             text=word,
             fill=self.color,
+            font=_FONT,
         )
 
     def crop(self, coords: Coords) -> Image:
